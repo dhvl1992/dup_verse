@@ -364,13 +364,13 @@
             
             <div class="sidebar">
                 <div class="sidebar-empty">
-                    Click on any node to view details and top 3 connected texts
+                    Click on any node or use search to explore connections
                 </div>
                 <div class="sidebar-content">
                     <div class="sidebar-title">Selected Node</div>
                     <div class="sidebar-text" id="sidebarText"></div>
                     
-                    <div class="suggestions-title">Top 3 Connected Nodes</div>
+                    <div class="suggestions-title">Top 5 Connected Nodes</div>
                     <div id="suggestions"></div>
                 </div>
             </div>
@@ -386,7 +386,8 @@
                         <li>No API required - runs offline</li>
                         <li>Model: all-MiniLM-L6-v2</li>
                         <li>Smart keyword extraction for labels</li>
-                        <li>Interactive sidebar with suggestions</li>
+                        <li>Interactive sidebar with top 5 suggestions</li>
+                        <li>Hybrid search: semantic + text matching</li>
                         <li>Zoom & pan navigation</li>
                     </ul>
                 </div>
@@ -397,8 +398,9 @@
                         <li>After that: instant & cached</li>
                         <li>Works with any language</li>
                         <li>Higher threshold = fewer connections</li>
-                        <li>Click nodes to explore connections</li>
-                        <li>Use search to find similar nodes by text</li>
+                        <li>Click nodes to explore top 5 connections</li>
+                        <li>Search combines meaning + text matching</li>
+                        <li>📍 badge shows exact text matches</li>
                         <li>Use zoom controls or scroll to zoom</li>
                     </ul>
                 </div>
@@ -494,7 +496,7 @@
             // Show selected node's full text
             sidebarText.textContent = node.fullText;
             
-            // Find top 3 connected nodes
+            // Find top 5 connected nodes
             const connections = currentLinks
                 .filter(link => 
                     (link.source.id === node.id || link.target.id === node.id)
@@ -507,9 +509,9 @@
                     };
                 })
                 .sort((a, b) => b.similarity - a.similarity)
-                .slice(0, 3);
+                .slice(0, 5);
             
-            // Display full texts of top 3 connected nodes
+            // Display full texts of top 5 connected nodes
             suggestionsDiv.innerHTML = '';
             const highlightedIds = [];
             
@@ -528,11 +530,11 @@
                 suggestionsDiv.appendChild(div);
             });
             
-            // Highlight selected node and top 3 connected nodes
+            // Highlight selected node and top 5 connected nodes
             highlightNodes(node.id, highlightedIds);
         }
         
-        // Search functionality
+        // Search functionality (hybrid: semantic + text matching)
         async function performSearch() {
             const query = searchInput.value.trim();
             if (!query || !extractor || currentNodes.length === 0) return;
@@ -546,16 +548,45 @@
                 const queryOutput = await extractor(query, { pooling: 'mean', normalize: true });
                 const queryEmbedding = Array.from(queryOutput.data);
                 
-                // Calculate similarity with all nodes
+                // Prepare query for text matching
+                const queryLower = query.toLowerCase();
+                const queryWords = queryLower.split(/\s+/).filter(w => w.length > 2);
+                
+                // Calculate similarity with all nodes (hybrid approach)
                 const threshold = parseFloat(thresholdSlider.value);
                 const results = currentNodes
-                    .map(node => ({
-                        node: node,
-                        similarity: cosineSimilarity(queryEmbedding, node.embedding)
-                    }))
+                    .map(node => {
+                        // Semantic similarity
+                        const semanticSim = cosineSimilarity(queryEmbedding, node.embedding);
+                        
+                        // Text matching bonus
+                        const nodeTextLower = node.fullText.toLowerCase();
+                        let textMatchBonus = 0;
+                        
+                        // Exact phrase match (highest bonus)
+                        if (nodeTextLower.includes(queryLower)) {
+                            textMatchBonus = 0.3;
+                        } else {
+                            // Partial word matches
+                            const matchedWords = queryWords.filter(word => 
+                                nodeTextLower.includes(word)
+                            ).length;
+                            textMatchBonus = (matchedWords / queryWords.length) * 0.2;
+                        }
+                        
+                        // Combined score (semantic + text match bonus)
+                        const finalScore = Math.min(semanticSim + textMatchBonus, 1.0);
+                        
+                        return {
+                            node: node,
+                            similarity: finalScore,
+                            semanticScore: semanticSim,
+                            textMatch: textMatchBonus > 0
+                        };
+                    })
                     .filter(result => result.similarity > threshold)
                     .sort((a, b) => b.similarity - a.similarity)
-                    .slice(0, 3);
+                    .slice(0, 5);
                 
                 // Update sidebar
                 sidebarEmpty.style.display = 'none';
@@ -573,10 +604,11 @@
                         highlightedIds.push(result.node.id);
                         const div = document.createElement('div');
                         div.className = 'suggestion-item';
+                        const matchBadge = result.textMatch ? ' <span style="color: #4ade80;">📍 Text Match</span>' : '';
                         div.innerHTML = `
-                            <div class="suggestion-label">${idx + 1}. ${result.node.text}</div>
+                            <div class="suggestion-label">${idx + 1}. ${result.node.text}${matchBadge}</div>
                             <div class="suggestion-text">${result.node.fullText}</div>
-                            <div class="suggestion-score">Similarity: ${(result.similarity * 100).toFixed(0)}%</div>
+                            <div class="suggestion-score">Score: ${(result.similarity * 100).toFixed(0)}% (Semantic: ${(result.semanticScore * 100).toFixed(0)}%)</div>
                         `;
                         div.addEventListener('click', () => {
                             showNodeDetails(result.node);
@@ -621,7 +653,7 @@
             // Highlight selected node
             d3.selectAll('circle').filter(d => d.id === selectedId).classed('node-selected', true);
             
-            // Highlight top 3 connected nodes
+            // Highlight top 5 connected nodes
             d3.selectAll('circle').filter(d => connectedIds.includes(d.id)).classed('node-highlighted', true);
         }
         
