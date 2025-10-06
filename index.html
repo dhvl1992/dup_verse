@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Semantic Network Visualizer</title>
+    <title>🧠 Semantic Network Visualizer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
         * {
@@ -435,7 +435,7 @@
     </div>
     
     <div class="container">
-        <h1>Semantic Network Visualizer</h1>
+        <h1>🧠 Semantic Network Visualizer</h1>
         
         <textarea id="textInput" placeholder="Paste your text, chat history, journal entries, notes, or any content here..."></textarea>
         
@@ -877,19 +877,27 @@
                     .attr('stroke-width', d => d.value * 4);
 
                 // Draw nodes
-                const colors = ['#fbbf24', '#f97316', '#ec4899', '#8b5cf6', '#06b6d4'];
                 const node = g.append('g')
                     .selectAll('circle')
                     .data(nodes)
                     .join('circle')
                     .attr('r', 10)
                     .attr('fill', d => {
+                        const colors = [
+                            'rgba(251, 191, 36, 0.5)',  // yellow
+                            'rgba(249, 115, 22, 0.5)',  // orange
+                            'rgba(236, 72, 153, 0.5)',  // pink
+                            'rgba(139, 92, 246, 0.5)',  // purple
+                            'rgba(6, 182, 212, 0.5)'    // cyan
+                        ];
                         const hash = d.fullText.substring(0, 3).charCodeAt(0) % 5;
                         return colors[hash];
                     })
                     .attr('stroke', '#fff')
                     .attr('stroke-width', 2)
+                    .attr('stroke-opacity', 0.8)
                     .style('cursor', 'pointer')
+                    .style('backdrop-filter', 'blur(10px)')
                     .on('click', (event, d) => {
                         event.stopPropagation();
                         showNodeDetails(d);
