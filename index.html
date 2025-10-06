@@ -21,7 +21,7 @@
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
         
@@ -94,16 +94,137 @@
             color: #4ade80;
         }
         
+        .main-layout {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
         .viz-container {
+            flex: 1;
             background: #1f2937;
             border: 1px solid #374151;
             border-radius: 0.5rem;
             padding: 1rem;
+            position: relative;
         }
         
         svg {
             width: 100%;
             height: 600px;
+            cursor: grab;
+        }
+        
+        svg:active {
+            cursor: grabbing;
+        }
+        
+        .zoom-controls {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .zoom-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            background: #374151;
+            border-radius: 0.25rem;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .zoom-btn:hover {
+            background: #4b5563;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .sidebar-empty {
+            color: #6b7280;
+            text-align: center;
+            padding: 2rem 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .sidebar-content {
+            display: none;
+        }
+        
+        .sidebar-content.active {
+            display: block;
+        }
+        
+        .sidebar-title {
+            color: #4ade80;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sidebar-text {
+            color: #e5e7eb;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+            padding: 0.75rem;
+            background: #111827;
+            border-radius: 0.25rem;
+        }
+        
+        .suggestions-title {
+            color: #4ade80;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .suggestion-item {
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 0.25rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .suggestion-item:hover {
+            border-color: #4ade80;
+            background: #1f2937;
+        }
+        
+        .suggestion-label {
+            color: #4ade80;
+            font-weight: 600;
+            font-size: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .suggestion-text {
+            color: #9ca3af;
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+        
+        .suggestion-score {
+            color: #6b7280;
+            font-size: 0.7rem;
+            margin-top: 0.25rem;
         }
         
         .info {
@@ -139,6 +260,23 @@
         .info-section li {
             margin-bottom: 0.25rem;
         }
+        
+        .node-selected {
+            stroke: #4ade80 !important;
+            stroke-width: 4px !important;
+            filter: drop-shadow(0 0 8px #4ade80);
+        }
+        
+        @media (max-width: 768px) {
+            .main-layout {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                max-height: 400px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -160,8 +298,28 @@
             <span id="status" class="status"></span>
         </div>
         
-        <div class="viz-container">
-            <svg id="graph"></svg>
+        <div class="main-layout">
+            <div class="viz-container">
+                <svg id="graph"></svg>
+                <div class="zoom-controls">
+                    <button class="zoom-btn" id="zoomIn">+</button>
+                    <button class="zoom-btn" id="zoomOut">−</button>
+                    <button class="zoom-btn" id="zoomReset">⟲</button>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="sidebar-empty">
+                    Click on any node to view details and suggestions
+                </div>
+                <div class="sidebar-content">
+                    <div class="sidebar-title">Selected Node</div>
+                    <div class="sidebar-text" id="sidebarText"></div>
+                    
+                    <div class="suggestions-title">Top 3 Connected Nodes</div>
+                    <div id="suggestions"></div>
+                </div>
+            </div>
         </div>
         
         <div class="info">
@@ -174,7 +332,8 @@
                         <li>No API required - runs offline</li>
                         <li>Model: all-MiniLM-L6-v2</li>
                         <li>Smart keyword extraction for labels</li>
-                        <li>Drag nodes to explore</li>
+                        <li>Interactive sidebar with suggestions</li>
+                        <li>Zoom & pan navigation</li>
                     </ul>
                 </div>
                 <div class="info-section">
@@ -184,6 +343,8 @@
                         <li>After that: instant & cached</li>
                         <li>Works with any language</li>
                         <li>Higher threshold = fewer connections</li>
+                        <li>Click nodes to explore connections</li>
+                        <li>Use zoom controls or scroll to zoom</li>
                     </ul>
                 </div>
             </div>
@@ -194,12 +355,43 @@
         import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
 
         let extractor = null;
+        let currentNodes = [];
+        let currentLinks = [];
+        let selectedNodeId = null;
+        
         const textInput = document.getElementById('textInput');
         const thresholdSlider = document.getElementById('threshold');
         const thresholdValue = document.getElementById('thresholdValue');
         const visualizeBtn = document.getElementById('visualizeBtn');
         const statusSpan = document.getElementById('status');
         const svg = d3.select('#graph');
+        const sidebarEmpty = document.querySelector('.sidebar-empty');
+        const sidebarContent = document.querySelector('.sidebar-content');
+        const sidebarText = document.getElementById('sidebarText');
+        const suggestionsDiv = document.getElementById('suggestions');
+
+        // Zoom setup
+        const g = svg.append('g');
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 4])
+            .on('zoom', (event) => {
+                g.attr('transform', event.transform);
+            });
+        
+        svg.call(zoom);
+
+        // Zoom controls
+        document.getElementById('zoomIn').addEventListener('click', () => {
+            svg.transition().duration(300).call(zoom.scaleBy, 1.3);
+        });
+        
+        document.getElementById('zoomOut').addEventListener('click', () => {
+            svg.transition().duration(300).call(zoom.scaleBy, 0.7);
+        });
+        
+        document.getElementById('zoomReset').addEventListener('click', () => {
+            svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
+        });
 
         // Update threshold display
         thresholdSlider.addEventListener('input', (e) => {
@@ -219,6 +411,57 @@
             }
             
             return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+        }
+
+        // Show node details in sidebar
+        function showNodeDetails(node) {
+            selectedNodeId = node.id;
+            
+            // Update sidebar
+            sidebarEmpty.style.display = 'none';
+            sidebarContent.classList.add('active');
+            sidebarText.textContent = node.fullText;
+            
+            // Find top 3 connected nodes
+            const connections = currentLinks
+                .filter(link => 
+                    (link.source.id === node.id || link.target.id === node.id)
+                )
+                .map(link => {
+                    const connectedNode = link.source.id === node.id ? link.target : link.source;
+                    return {
+                        node: connectedNode,
+                        similarity: link.value
+                    };
+                })
+                .sort((a, b) => b.similarity - a.similarity)
+                .slice(0, 3);
+            
+            // Display suggestions
+            suggestionsDiv.innerHTML = '';
+            connections.forEach((conn, idx) => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.innerHTML = `
+                    <div class="suggestion-label">${idx + 1}. ${conn.node.text}</div>
+                    <div class="suggestion-text">${conn.node.fullText.substring(0, 80)}${conn.node.fullText.length > 80 ? '...' : ''}</div>
+                    <div class="suggestion-score">Similarity: ${(conn.similarity * 100).toFixed(0)}%</div>
+                `;
+                div.addEventListener('click', () => {
+                    showNodeDetails(conn.node);
+                    highlightNode(conn.node.id);
+                });
+                suggestionsDiv.appendChild(div);
+            });
+            
+            // Highlight selected node
+            highlightNode(node.id);
+        }
+        
+        // Highlight node
+        function highlightNode(nodeId) {
+            d3.selectAll('circle').classed('node-selected', false);
+            d3.selectAll('circle').filter(d => d.id === nodeId).classed('node-selected', true);
         }
 
         // Drag behavior
@@ -304,7 +547,7 @@
                     let bestWord = words[0];
                     let bestSim = -1;
                     
-                    for (const word of words.slice(0, 5)) { // Check first 5 candidates
+                    for (const word of words.slice(0, 5)) {
                         const wordEmbed = await extractor(word, { pooling: 'mean', normalize: true });
                         const wordArray = Array.from(wordEmbed.data);
                         const sim = cosineSimilarity(wordArray, embeddings[i]);
@@ -344,8 +587,12 @@
                     }
                 }
 
+                // Store for later use
+                currentNodes = nodes;
+                currentLinks = links;
+
                 // Clear previous
-                svg.selectAll('*').remove();
+                g.selectAll('*').remove();
 
                 const width = svg.node().clientWidth;
                 const height = 600;
@@ -358,7 +605,7 @@
                     .force('collision', d3.forceCollide().radius(30));
 
                 // Draw links
-                const link = svg.append('g')
+                const link = g.append('g')
                     .selectAll('line')
                     .data(links)
                     .join('line')
@@ -368,7 +615,7 @@
 
                 // Draw nodes
                 const colors = ['#fbbf24', '#f97316', '#ec4899', '#8b5cf6', '#06b6d4'];
-                const node = svg.append('g')
+                const node = g.append('g')
                     .selectAll('circle')
                     .data(nodes)
                     .join('circle')
@@ -379,10 +626,15 @@
                     })
                     .attr('stroke', '#fff')
                     .attr('stroke-width', 2)
+                    .style('cursor', 'pointer')
+                    .on('click', (event, d) => {
+                        event.stopPropagation();
+                        showNodeDetails(d);
+                    })
                     .call(drag(simulation));
 
                 // Add labels
-                const labelTexts = svg.append('g')
+                const labelTexts = g.append('g')
                     .selectAll('text')
                     .data(nodes)
                     .join('text')
