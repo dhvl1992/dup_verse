@@ -267,6 +267,12 @@
             filter: drop-shadow(0 0 8px #4ade80);
         }
         
+        .node-highlighted {
+            stroke: #fbbf24 !important;
+            stroke-width: 3px !important;
+            filter: drop-shadow(0 0 6px #fbbf24);
+        }
+        
         @media (max-width: 768px) {
             .main-layout {
                 flex-direction: column;
@@ -310,12 +316,9 @@
             
             <div class="sidebar">
                 <div class="sidebar-empty">
-                    Click on any node to view details and suggestions
+                    Click on any node to view top 3 connected texts
                 </div>
                 <div class="sidebar-content">
-                    <div class="sidebar-title">Selected Node</div>
-                    <div class="sidebar-text" id="sidebarText"></div>
-                    
                     <div class="suggestions-title">Top 3 Connected Nodes</div>
                     <div id="suggestions"></div>
                 </div>
@@ -420,7 +423,6 @@
             // Update sidebar
             sidebarEmpty.style.display = 'none';
             sidebarContent.classList.add('active');
-            sidebarText.textContent = node.fullText;
             
             // Find top 3 connected nodes
             const connections = currentLinks
@@ -437,31 +439,39 @@
                 .sort((a, b) => b.similarity - a.similarity)
                 .slice(0, 3);
             
-            // Display suggestions
+            // Display full texts of top 3 connected nodes
             suggestionsDiv.innerHTML = '';
+            const highlightedIds = [];
+            
             connections.forEach((conn, idx) => {
+                highlightedIds.push(conn.node.id);
                 const div = document.createElement('div');
                 div.className = 'suggestion-item';
                 div.innerHTML = `
                     <div class="suggestion-label">${idx + 1}. ${conn.node.text}</div>
-                    <div class="suggestion-text">${conn.node.fullText.substring(0, 80)}${conn.node.fullText.length > 80 ? '...' : ''}</div>
+                    <div class="suggestion-text">${conn.node.fullText}</div>
                     <div class="suggestion-score">Similarity: ${(conn.similarity * 100).toFixed(0)}%</div>
                 `;
                 div.addEventListener('click', () => {
                     showNodeDetails(conn.node);
-                    highlightNode(conn.node.id);
                 });
                 suggestionsDiv.appendChild(div);
             });
             
-            // Highlight selected node
-            highlightNode(node.id);
+            // Highlight selected node and top 3 connected nodes
+            highlightNodes(node.id, highlightedIds);
         }
         
-        // Highlight node
-        function highlightNode(nodeId) {
+        // Highlight node and its connections
+        function highlightNodes(selectedId, connectedIds) {
             d3.selectAll('circle').classed('node-selected', false);
-            d3.selectAll('circle').filter(d => d.id === nodeId).classed('node-selected', true);
+            d3.selectAll('circle').classed('node-highlighted', false);
+            
+            // Highlight selected node
+            d3.selectAll('circle').filter(d => d.id === selectedId).classed('node-selected', true);
+            
+            // Highlight top 3 connected nodes
+            d3.selectAll('circle').filter(d => connectedIds.includes(d.id)).classed('node-highlighted', true);
         }
 
         // Drag behavior
