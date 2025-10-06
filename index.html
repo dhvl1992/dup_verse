@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 Semantic Network Visualizer</title>
+    <title>Semantic Network Visualizer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
         * {
@@ -16,18 +16,53 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: #111827;
             color: white;
-            padding: 2rem;
+            margin: 0;
+            padding: 0;
             min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        .graph-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        
+        .graph-background svg {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+        
+        .graph-background svg:active {
+            cursor: grabbing;
         }
         
         .container {
+            position: relative;
+            z-index: 10;
             max-width: 1400px;
             margin: 0 auto;
+            padding: 2rem;
+            pointer-events: none;
+        }
+        
+        .container > * {
+            pointer-events: auto;
         }
         
         h1 {
             font-size: 2rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            background: rgba(31, 41, 55, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
         
         .subtitle {
@@ -62,6 +97,12 @@
             align-items: center;
             margin-bottom: 1rem;
             flex-wrap: wrap;
+            background: rgba(31, 41, 55, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
         
         .slider-group {
@@ -134,11 +175,15 @@
         }
         
         .clear-btn {
-            background: #dc2626;
+            background: rgba(220, 38, 38, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            box-shadow: 0 8px 32px rgba(220, 38, 38, 0.2);
         }
         
         .clear-btn:hover:not(:disabled) {
-            background: #b91c1c;
+            background: rgba(220, 38, 38, 0.6);
+            border-color: rgba(239, 68, 68, 0.5);
         }
         
         .status {
@@ -146,66 +191,62 @@
             color: #4ade80;
         }
         
-        .main-layout {
+        .controls-layout {
             display: flex;
             gap: 1rem;
+            align-items: flex-start;
             margin-bottom: 1rem;
         }
         
-        .viz-container {
+        .main-controls {
             flex: 1;
-            background: #1f2937;
-            border: 1px solid #374151;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            position: relative;
-        }
-        
-        svg {
-            width: 100%;
-            height: 600px;
-            cursor: grab;
-        }
-        
-        svg:active {
-            cursor: grabbing;
         }
         
         .zoom-controls {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
+            z-index: 100;
         }
         
         .zoom-btn {
             width: 36px;
             height: 36px;
             padding: 0;
-            background: #374151;
+            background: rgba(55, 65, 81, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(75, 85, 99, 0.3);
             border-radius: 0.25rem;
             font-size: 1.25rem;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
         
         .zoom-btn:hover {
-            background: #4b5563;
+            background: rgba(75, 85, 99, 0.6);
+            border-color: rgba(107, 114, 128, 0.5);
         }
         
         .sidebar {
+            position: fixed;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
             width: 300px;
             background: rgba(31, 41, 55, 0.4);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(75, 85, 99, 0.3);
             border-radius: 0.5rem;
             padding: 1rem;
-            max-height: 600px;
+            max-height: 70vh;
             overflow-y: auto;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            z-index: 100;
         }
         
         .sidebar-empty {
@@ -236,7 +277,9 @@
             line-height: 1.5;
             margin-bottom: 1.5rem;
             padding: 0.75rem;
-            background: #111827;
+            background: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(55, 65, 81, 0.5);
             border-radius: 0.25rem;
         }
         
@@ -248,18 +291,19 @@
         }
         
         .suggestion-item {
-            background: #111827;
-            border: 1px solid #374151;
+            background: rgba(17, 24, 39, 0.6);
+            border: 1px solid rgba(55, 65, 81, 0.5);
             border-radius: 0.25rem;
             padding: 0.75rem;
             margin-bottom: 0.5rem;
             cursor: pointer;
             transition: all 0.2s;
+            backdrop-filter: blur(5px);
         }
         
         .suggestion-item:hover {
             border-color: #4ade80;
-            background: #1f2937;
+            background: rgba(31, 41, 55, 0.8);
         }
         
         .suggestion-label {
@@ -334,18 +378,62 @@
         }
         
         @media (max-width: 768px) {
-            .main-layout {
-                flex-direction: column;
+            .container {
+                padding: 1rem;
             }
             
             .sidebar {
+                position: fixed;
+                bottom: 0;
+                right: 0;
+                left: 0;
+                top: auto;
+                transform: none;
                 width: 100%;
-                max-height: 400px;
+                max-height: 40vh;
+                border-radius: 0.5rem 0.5rem 0 0;
+            }
+            
+            .zoom-controls {
+                top: auto;
+                bottom: 45vh;
+                right: 1rem;
+            }
+            
+            textarea {
+                height: 120px;
+            }
+            
+            input[type="text"] {
+                width: 150px;
             }
         }
     </style>
 </head>
 <body>
+    <div class="graph-background">
+        <svg id="graph"></svg>
+    </div>
+    
+    <div class="zoom-controls">
+        <button class="zoom-btn" id="zoomIn">+</button>
+        <button class="zoom-btn" id="zoomOut">−</button>
+        <button class="zoom-btn" id="zoomReset">⟲</button>
+    </div>
+    
+    <div class="sidebar">
+        <div class="sidebar-empty">
+            Click on any node or use search to explore connections
+        </div>
+        <div class="sidebar-content">
+            <div class="sidebar-title">Selected Node</div>
+            <div class="sidebar-text" id="sidebarText"></div>
+            
+            <div class="suggestions-title">Top 5 Connected Nodes</div>
+            <div id="suggestions"></div>
+        </div>
+    </div>
+    
     <div class="container">
         <h1>🧠 Semantic Network Visualizer</h1>
         
@@ -367,30 +455,6 @@
             </div>
             
             <span id="status" class="status"></span>
-        </div>
-        
-        <div class="main-layout">
-            <div class="viz-container">
-                <svg id="graph"></svg>
-                <div class="zoom-controls">
-                    <button class="zoom-btn" id="zoomIn">+</button>
-                    <button class="zoom-btn" id="zoomOut">−</button>
-                    <button class="zoom-btn" id="zoomReset">⟲</button>
-                </div>
-            </div>
-            
-            <div class="sidebar">
-                <div class="sidebar-empty">
-                    Click on any node or use search to explore connections
-                </div>
-                <div class="sidebar-content">
-                    <div class="sidebar-title">Selected Node</div>
-                    <div class="sidebar-text" id="sidebarText"></div>
-                    
-                    <div class="suggestions-title">Top 5 Connected Nodes</div>
-                    <div id="suggestions"></div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -452,6 +516,16 @@
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !searchBtn.disabled) {
                 performSearch();
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (currentNodes.length > 0) {
+                // Update SVG viewBox to match new window size
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                svg.attr('viewBox', `0 0 ${width} ${height}`);
             }
         });
 
@@ -783,8 +857,8 @@
                 // Clear previous
                 g.selectAll('*').remove();
 
-                const width = svg.node().clientWidth;
-                const height = 600;
+                const width = window.innerWidth;
+                const height = window.innerHeight;
 
                 // Create simulation
                 const simulation = d3.forceSimulation(nodes)
