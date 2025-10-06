@@ -316,9 +316,12 @@
             
             <div class="sidebar">
                 <div class="sidebar-empty">
-                    Click on any node to view top 3 connected texts
+                    Click on any node to view details and top 3 connected texts
                 </div>
                 <div class="sidebar-content">
+                    <div class="sidebar-title">Selected Node</div>
+                    <div class="sidebar-text" id="sidebarText"></div>
+                    
                     <div class="suggestions-title">Top 3 Connected Nodes</div>
                     <div id="suggestions"></div>
                 </div>
@@ -423,6 +426,9 @@
             // Update sidebar
             sidebarEmpty.style.display = 'none';
             sidebarContent.classList.add('active');
+            
+            // Show selected node's full text
+            sidebarText.textContent = node.fullText;
             
             // Find top 3 connected nodes
             const connections = currentLinks
