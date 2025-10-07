@@ -257,6 +257,127 @@
             border-color: rgba(156, 163, 175, 0.5);
         }
         
+        .expander-section {
+            background: rgba(31, 41, 55, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .expander-title {
+            color: #4ade80;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .expander-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .expander-column {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .expander-label {
+            color: #9ca3af;
+            font-size: 0.75rem;
+        }
+        
+        .short-input {
+            width: 100%;
+            height: 80px;
+            padding: 0.75rem;
+            background: rgba(31, 41, 55, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+            border-radius: 0.5rem;
+            color: white;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            resize: vertical;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .short-input::placeholder {
+            color: rgba(156, 163, 175, 0.8);
+        }
+        
+        .expanded-output {
+            width: 100%;
+            height: 80px;
+            padding: 0.75rem;
+            background: rgba(31, 41, 55, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+            border-radius: 0.5rem;
+            color: white;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            resize: vertical;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .template-select {
+            padding: 0.5rem;
+            background: rgba(31, 41, 55, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+            border-radius: 0.5rem;
+            color: white;
+            font-size: 0.875rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .template-select option {
+            background: #1f2937;
+            color: white;
+        }
+        
+        .expander-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .expand-btn {
+            background: rgba(251, 191, 36, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(252, 211, 77, 0.3);
+            box-shadow: 0 8px 32px rgba(251, 191, 36, 0.2);
+        }
+        
+        .expand-btn:hover:not(:disabled) {
+            background: rgba(251, 191, 36, 0.6);
+            border-color: rgba(252, 211, 77, 0.5);
+        }
+        
+        .copy-to-main-btn {
+            background: rgba(34, 197, 94, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            box-shadow: 0 8px 32px rgba(34, 197, 94, 0.2);
+        }
+        
+        .copy-to-main-btn:hover:not(:disabled) {
+            background: rgba(34, 197, 94, 0.6);
+            border-color: rgba(74, 222, 128, 0.5);
+        }
+        
+        .template-hints {
+            font-size: 0.7rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+            line-height: 1.4;
+        }
+        
         .status {
             font-size: 0.875rem;
             color: #4ade80;
@@ -469,6 +590,18 @@
                 flex-wrap: wrap;
             }
             
+            .expander-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .expander-buttons {
+                flex-wrap: wrap;
+            }
+            
+            .template-select {
+                width: 100%;
+            }
+            
             .sidebar {
                 position: fixed;
                 bottom: 0;
@@ -539,6 +672,43 @@
             </div>
         </div>
         
+        <!-- Text Expander Section -->
+        <div class="expander-section">
+            <div class="expander-title">✨ Quick Entry Expander</div>
+            <div class="expander-grid">
+                <div class="expander-column">
+                    <div class="expander-label">Short Input</div>
+                    <textarea id="shortInput" class="short-input" placeholder="CL, 19/09/2025&#10;Bank, 35151025, SBIN037&#10;GTU, gtuexams.in, email@gtu.edu.in, pass123"></textarea>
+                    <div class="template-hints">
+                        📝 Supported formats:<br>
+                        • CL/RH/SL, date<br>
+                        • Bank, number, ifsc<br>
+                        • name, site, email, password<br>
+                        • Todo, task<br>
+                        • Quote, text<br>
+                        • Link, url
+                    </div>
+                </div>
+                <div class="expander-column">
+                    <div class="expander-label">Expanded Output (editable)</div>
+                    <textarea id="expandedOutput" class="expanded-output" placeholder="Expanded text will appear here..."></textarea>
+                    <div class="expander-buttons">
+                        <select id="templateType" class="template-select">
+                            <option value="auto">Auto-detect</option>
+                            <option value="leave">Leave (CL/RH/SL)</option>
+                            <option value="credential">Credential</option>
+                            <option value="bank">Bank Account</option>
+                            <option value="todo">Todo Task</option>
+                            <option value="quote">Quote</option>
+                            <option value="link">Link</option>
+                        </select>
+                        <button id="expandBtn" class="expand-btn">🔄 Expand</button>
+                        <button id="copyToMainBtn" class="copy-to-main-btn" disabled>📋 Copy to Main</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <textarea id="textInput" placeholder="Paste your text, chat history, journal entries, notes, or any content here..."></textarea>
         
         <div class="controls">
@@ -566,12 +736,12 @@
         // ============================================
         // TODO: Replace with your Firebase config from Firebase Console
         const firebaseConfig = {
-            apiKey: "AIzaSyC8vTqEY9Mzbjlb9E6tjN3GbL_lfj2MVms",
-            authDomain: "semantic-network-adca0.firebaseapp.com",
-            projectId: "semantic-network-adca0",
-            storageBucket: "semantic-network-adca0.firebasestorage.app",
-            messagingSenderId: "76059795361",
-            appId: "1:76059795361:web:b7331a9a5ad26c145775e0"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
         
         // Initialize Firebase
@@ -619,6 +789,13 @@
         const authStatus = document.getElementById('authStatus');
         const userEmail = document.getElementById('userEmail');
 
+        // Expander elements
+        const shortInput = document.getElementById('shortInput');
+        const expandedOutput = document.getElementById('expandedOutput');
+        const expandBtn = document.getElementById('expandBtn');
+        const copyToMainBtn = document.getElementById('copyToMainBtn');
+        const templateType = document.getElementById('templateType');
+
         // Zoom setup
         const g = svg.append('g');
         const zoom = d3.zoom()
@@ -662,6 +839,13 @@
         if (logoutBtn) logoutBtn.addEventListener('click', logout);
         if (saveBtn) saveBtn.addEventListener('click', saveToFirebase);
         if (loadBtn) loadBtn.addEventListener('click', loadFromFirebase);
+        
+        // Expander event listeners
+        expandBtn.addEventListener('click', expandText);
+        copyToMainBtn.addEventListener('click', copyToMain);
+        expandedOutput.addEventListener('input', () => {
+            copyToMainBtn.disabled = !expandedOutput.value.trim();
+        });
         
         // Handle window resize
         window.addEventListener('resize', () => {
@@ -846,6 +1030,187 @@
             // Reset sidebar
             sidebarEmpty.style.display = 'block';
             sidebarContent.classList.remove('active');
+        }
+        
+        // ============================================
+        // TEXT EXPANDER FUNCTIONS
+        // ============================================
+        
+        // Date parser
+        function parseDate(dateStr) {
+            // Handle formats: DD/MM/YYYY, D/M/YYYY, etc.
+            const parts = dateStr.trim().split('/');
+            if (parts.length !== 3) return dateStr;
+            
+            const day = parseInt(parts[0]);
+            const month = parseInt(parts[1]) - 1; // JS months are 0-indexed
+            const year = parseInt(parts[2]);
+            
+            const date = new Date(year, month, day);
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            return `${months[month]} ${day}, ${year}`;
+        }
+        
+        // Pattern detectors
+        function detectPattern(text) {
+            const trimmed = text.trim().toLowerCase();
+            
+            // Leave patterns
+            if (trimmed.match(/^(cl|rh|sl|ml|el|pl)\s*,/)) return 'leave';
+            
+            // Bank pattern
+            if (trimmed.match(/^bank\s*,/)) return 'bank';
+            
+            // Todo pattern
+            if (trimmed.match(/^todo\s*,/)) return 'todo';
+            
+            // Quote pattern
+            if (trimmed.match(/^quote\s*,/)) return 'quote';
+            
+            // Link pattern
+            if (trimmed.match(/^link\s*,/) || trimmed.match(/^https?:\/\//)) return 'link';
+            
+            // Credential pattern (4 parts separated by commas)
+            const parts = text.split(',').map(s => s.trim());
+            if (parts.length >= 4) return 'credential';
+            if (parts.length === 3 && parts[1].includes('.')) return 'credential';
+            
+            return 'unknown';
+        }
+        
+        // Template expanders
+        function expandLeave(text) {
+            const parts = text.split(',').map(s => s.trim());
+            if (parts.length < 2) return text;
+            
+            const leaveType = parts[0].toUpperCase();
+            const date = parseDate(parts[1]);
+            const reason = parts[2] ? ` for ${parts[2]}` : '';
+            
+            const leaveTypes = {
+                'CL': 'Casual leave',
+                'RH': 'Restricted holiday',
+                'SL': 'Sick leave',
+                'ML': 'Medical leave',
+                'EL': 'Earned leave',
+                'PL': 'Privilege leave'
+            };
+            
+            const leaveName = leaveTypes[leaveType] || 'Leave';
+            return `${leaveName} taken on ${date}${reason}.`;
+        }
+        
+        function expandCredential(text) {
+            const parts = text.split(',').map(s => s.trim());
+            
+            if (parts.length === 3) {
+                // Format: name, site, email
+                const [name, site, email] = parts;
+                return `Credential for ${name} at ${site} using email ${email}.`;
+            } else if (parts.length >= 4) {
+                // Format: name, site, email, password
+                const [name, site, email, password] = parts;
+                const cleanSite = site.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '');
+                return `Credential for ${name} at ${cleanSite} using email ${email} and password ${password}.`;
+            }
+            
+            return text;
+        }
+        
+        function expandBank(text) {
+            const parts = text.split(',').map(s => s.trim());
+            if (parts.length < 3) return text;
+            
+            const [_, number, ifsc, ...rest] = parts;
+            const bankName = rest.join(' ') || 'bank';
+            return `Bank account number ${number} with IFSC code ${ifsc} at ${bankName}.`;
+        }
+        
+        function expandTodo(text) {
+            const task = text.substring(text.indexOf(',') + 1).trim();
+            return `Todo task: ${task}.`;
+        }
+        
+        function expandQuote(text) {
+            const quote = text.substring(text.indexOf(',') + 1).trim();
+            return `Inspirational quote: ${quote}`;
+        }
+        
+        function expandLink(text) {
+            let url = text;
+            if (text.toLowerCase().startsWith('link,')) {
+                url = text.substring(text.indexOf(',') + 1).trim();
+            }
+            
+            const parts = text.split(',').map(s => s.trim());
+            const description = parts.length > 2 ? ` - ${parts.slice(2).join(' ')}` : '';
+            
+            return `Resource link at ${url}${description}.`;
+        }
+        
+        // Main expand function
+        function expandText() {
+            const input = shortInput.value.trim();
+            if (!input) {
+                expandedOutput.value = '';
+                copyToMainBtn.disabled = true;
+                return;
+            }
+            
+            const lines = input.split('\n').filter(line => line.trim());
+            const expanded = [];
+            
+            for (const line of lines) {
+                const type = templateType.value === 'auto' ? detectPattern(line) : templateType.value;
+                
+                let result;
+                switch (type) {
+                    case 'leave':
+                        result = expandLeave(line);
+                        break;
+                    case 'credential':
+                        result = expandCredential(line);
+                        break;
+                    case 'bank':
+                        result = expandBank(line);
+                        break;
+                    case 'todo':
+                        result = expandTodo(line);
+                        break;
+                    case 'quote':
+                        result = expandQuote(line);
+                        break;
+                    case 'link':
+                        result = expandLink(line);
+                        break;
+                    default:
+                        result = line;
+                }
+                
+                expanded.push(result);
+            }
+            
+            expandedOutput.value = expanded.join('\n');
+            copyToMainBtn.disabled = false;
+        }
+        
+        // Copy to main textarea
+        function copyToMain() {
+            const expanded = expandedOutput.value.trim();
+            if (!expanded) return;
+            
+            const current = textInput.value.trim();
+            textInput.value = current ? `${current}\n${expanded}` : expanded;
+            
+            // Clear expander
+            shortInput.value = '';
+            expandedOutput.value = '';
+            copyToMainBtn.disabled = true;
+            
+            statusSpan.textContent = '✅ Copied to main!';
+            setTimeout(() => statusSpan.textContent = '', 2000);
         }
         
         // ============================================
